@@ -26,6 +26,9 @@ FusionEKF::FusionEKF()
   	H_laser_ = MatrixXd(2, 4);
   	Hj_ = MatrixXd(3, 4);
 
+	H_laser_ << 1, 0, 0, 0,
+		 		0, 1, 0, 0;
+
   	//measurement covariance matrix - laser
   	R_laser_ << 0.0225, 0,
   		        0, 		0.0225;
@@ -48,6 +51,7 @@ FusionEKF::FusionEKF()
 				0, 0, 0, 0;
 
 	P_matrix = MatrixXd(4, 4);
+	P_matrix = MatrixXd::Zero(4, 4);
 	P_matrix << 1, 0, 0, 0,
 				0 ,1, 0, 0,
 				0, 0, 1000, 0,
@@ -84,6 +88,8 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack)
   		//	TODO:
   	    // Initialize the state ekf_.x_ with the first measurement.
   	  	// Create the covariance matrix.
+	
+		ekf_.H_ = H_laser_;
       
 		// first measurement
 	    cout << "EKF: Init" << endl;
@@ -131,12 +137,12 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack)
   	// Update the process noise covariance matrix.
   	// Use noise_ax = 9 and noise_ay = 9 for your Q matrix.
   	//
-	float dt = (measurement_pack.timestamp_ - previous_timestamp_) / 1000000.0;	
+	double dt = (measurement_pack.timestamp_ - previous_timestamp_) / 1000000.0;	
 	previous_timestamp_ = measurement_pack.timestamp_;
 
-	float dt_2 = dt * dt;
-	float dt_3 = dt_2 * dt;
-	float dt_4 = dt_3 * dt;
+	double dt_2 = dt * dt;
+	double dt_3 = dt_2 * dt;
+	double dt_4 = dt_3 * dt;
 
 	//Modify the F matrix so that the time is integrated
 	ekf_.F_(0, 2) = dt;
@@ -167,36 +173,22 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack)
   	// Update the state and covariance matrices.
   	
 
-	VectorXd x_in = VectorXd(4);
+	//VectorXd x_in = VectorXd(4);
   	//-------------------------------------------------------------
   	if (measurement_pack.sensor_type_ == MeasurementPackage::RADAR) 
 	{
-	   	// Radar updates -convert Polar to Cartesian
-	   	float rho = measurement_pack.raw_measurements_[0];
-	   	float phi = measurement_pack.raw_measurements_[1];
-	   	float rho_dot = measurement_pack.raw_measurements_[2];
-	   	
-	   	float px = rho * cos(phi);
-	   	float py = rho * sin(phi);
-	   	float vx = 0; 			//rho_dot * cos(phi);
-	   	float vy = 0;			//rho_dot * sin(phi);
-	   	
-	   	x_in << px, py, vx, vy;
 	   	
 	    // Get Hj Jacobian 
-  		Hj_ = tools.CalculateJacobian( x_in );	
+  		Hj_ = tools.CalculateJacobian( ekf_.x_ );	
   		
 		//------------- Radar updates ---------------------------
-	   	ekf_.Init( x_in, ekf_.P_, ekf_.F_, Hj_, R_radar_, ekf_.Q_);
+	   	ekf_.Init( ekf_.x_, ekf_.P_, ekf_.F_, Hj_, R_radar_, ekf_.Q_); 
 		ekf_.UpdateEKF(measurement_pack.raw_measurements_);
 
   	} 
 	else
 	{
-	   	x_in << measurement_pack.raw_measurements_[0], 
-				 measurement_pack.raw_measurements_[1], 0, 0; 
-		
- 		// -----------------Laser updates-------------------------
+		// -----------------Laser updates-------------------------
  		ekf_.Init( ekf_.x_, ekf_.P_, ekf_.F_, H_laser_, R_laser_, ekf_.Q_);
  		ekf_.Update(measurement_pack.raw_measurements_);
 
