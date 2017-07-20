@@ -58,7 +58,7 @@ VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
 	//calculate the squared root
 	rmse = rmse.array().sqrt();
 	
-	//cout << "RMSE = " << rmse(0) << "\t" << rmse(1) << "\t" << rmse(2) << "\t" << rmse(3) << "\n\n\n\n";
+	cout << "RMSE = " << rmse(0) << "\t" << rmse(1) << "\t" << rmse(2) << "\t" << rmse(3) << "\n\n\n\n";
 	
 	//return the result
 	return rmse;
