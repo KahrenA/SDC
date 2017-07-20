@@ -122,8 +122,8 @@ int main()
 				  	iss >> vy_gt;
 
 					unsigned int count;
-					//cout << "count = " << ++count << "\n";
-					//cout << "gt  = " << x_gt << "\t" << y_gt << "\t" << vx_gt << "\t" << vy_gt << "\n\n";
+					cout << "count = " << ++count << "\n";
+					cout << "gt  = " << x_gt << "\t" << y_gt << "\t" << vx_gt << "\t" << vy_gt << "\n\n";
 				  	
 				  	VectorXd gt_values(4);
 				  	gt_values(0) = x_gt;
@@ -150,7 +150,7 @@ int main()
 				  	estimate(1) = p_y;
 				  	estimate(2) = v1;
 				  	estimate(3) = v2;
-					//cout << "est = " << p_x << "\t" << p_y << "\t" << v1 << "\t" << v2 << "\n\n";
+					cout << "est = " << p_x << "\t" << p_y << "\t" << v1 << "\t" << v2 << "\n\n";
 				   
 				  	estimations.push_back(estimate);
 
