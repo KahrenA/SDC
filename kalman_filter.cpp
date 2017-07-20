@@ -59,7 +59,8 @@ void KalmanFilter::Update(const VectorXd &z)
 
 	//new estimate
 	x_ = x_ + (K * y);
-	long x_size = x_.size();
+	long x_size = x_.
+size();
 	MatrixXd I = MatrixXd::Identity(x_size, x_size);
 	P_ = (I - K * H_) * P_;
   	
@@ -74,37 +75,56 @@ void KalmanFilter::UpdateEKF(const VectorXd &z)
 
   	//**TODO:update the state by using Extended Kalman Filter equations
   	
-  	// Get Hj Jacobian 
-  	//H_ = tools::CalculateJacobian( x_ );
-
-  	
-	// Lesson 5.20 indicates To calculate y, we use the equations that map 
+  	// Lesson 5.20 indicates To calculate y, we use the equations that map 
 	// the predicted location x​′​​ from Cartesian coordinates to polar coordinates:
 	// y = z(of radar) - h(x')
-	float rho = sqrt( x_[0] * x_[0] + x_[1] * x_[1]);
-	double phi = 0.0;
-	if (fabs(x_[0]) > 0.0001)
-		phi = atan2(x_[1], x_[0]);
-
-	if(phi > M_PI)
+	
+	if ( (fabs(x_[0]) < 0.0001) && (fabs(x_[1]) < 0.0001) )
 	{
-		//phi = ((phi - M_PI) % (2 * M_PI)) - M_PI;
-		std::cout << "Phi > M_PI = " << phi << "\n\n";
+		std::cout << "problem in converting to Polar\n\n";
+		return;
+	}	
+	VectorXd h_polar(3);
+	h_polar << 0, 0, 0;
+
+	double px = x_[0];
+	double py = x_[1];
+	double vx = x_[2];
+	double vy = x_[3];
+
+	h_polar(0) = sqrt( (px * px) + (py * py));
+	if(fabs(px) < 0.001)
+		px = 0.001;	
+
+	h_polar(1) = atan2(py, px);
+	
+	if(fabs(h_polar(1)) < 0.001)
+		h_polar(1) = 0.001;
+
+	h_polar(2) = (px * vx + py * vy) / h_polar(0);
+
+	
+	//---------------------------------------------
+	VectorXd y = z - h_polar;
+
+	// Let's normalize the y which is polar itself
+	if(y(1) > M_PI)
+	{	
+		while(y(1) > M_PI)
+		{
+			std::cout << "y(1) > M_PI\n";
+			y(1) -= 2*M_PI;
+		}	
 	}
-	else if (phi < - M_PI)
+	else if (y(1) < -M_PI)
 	{
-		//phi = ((phi + M_PI) % (2 * M_PI)) + M_PI;
-		std::cout << "Phi < -M_PI = " << phi << "\n\n";
+		while (y(1) < -M_PI)
+		{
+			std::cout << "y(1) < -M_PI\n";
+			y(1) += 2 * M_PI;
+		}
 	}
 
-	float rho_dot;
-	if(fabs(rho) > 0.0001)
-		rho_dot = (x_[0] * x_[2] + x_[1] * x_[3]) / rho;
-
-	VectorXd hx(3);
-	hx << rho, phi, rho_dot;
-	VectorXd y = z - hx;
-	std::cout << "y = " << y << "\n\n";
 
 	MatrixXd Ht = H_.transpose();
 	
